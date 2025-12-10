@@ -11,29 +11,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout code
       - name: Checkout
         uses: actions/checkout@v3
 
-      # Setup .NET
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '9.0.x'
 
-      # Restore and build
-      - name: Restore
-        run: dotnet restore BlazorProj-CA3/BlazorProj-CA3.sln
+      # Restore projects
+      - name: Restore App
+        run: dotnet restore BlazorProj-CA3/BlazorProj-CA3.csproj
 
-      - name: Build
-      - run: dotnet build BlazorProj-CA3/BlazorProj-CA3.sln -c Release --no-restore
+      - name: Restore Tests
+        run: dotnet restore BlazorProj-CA3-Tests/BlazorProj-CA3-Tests.csproj
 
-      # Run Playwright tests
+      # Build projects
+      - name: Build App
+        run: dotnet build BlazorProj-CA3/BlazorProj-CA3.csproj -c Release --no-restore
+
+      - name: Build Tests
+        run: dotnet build BlazorProj-CA3-Tests/BlazorProj-CA3-Tests.csproj -c Release --no-restore
+
+      # Install Playwright browsers
       - name: Install Playwright browsers
         run: pwsh ./BlazorProj-CA3-Tests/bin/Release/net9.0/playwright.ps1 install --with-deps
 
+      # Run tests
       - name: Run tests
-        run: dotnet test BlazorProj-CA3-Tests/BlazorProj-CA3-Tests.csproj --configuration Release --logger "console;verbosity=detailed"
+        run: dotnet test BlazorProj-CA3-Tests/BlazorProj-CA3-Tests.csproj -c Release --logger "console;verbosity=detailed"
 
       # Publish Blazor WASM
       - name: Publish Blazor WASM
