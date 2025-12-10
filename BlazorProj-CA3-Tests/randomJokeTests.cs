@@ -8,7 +8,7 @@ using Xunit;
 
 namespace BlazorProj_CA3_Tests
 {
-        [Collection("e2e")]
+    [Collection("e2e")]
     public class RandomJokeTests
     {
         private readonly BlazorProjTests _bp;
@@ -17,22 +17,25 @@ namespace BlazorProj_CA3_Tests
         [Fact]
         public async Task RandomJoke_Displays_Text_After_Fetch()
         {
-            await _bp.Page.GotoAsync($"{_bp.BaseUrl}/random", new() { WaitUntil = Microsoft.Playwright.WaitUntilState.NetworkIdle });
-            await _bp.Page.WaitForSelectorAsync("body");
+            await _bp.Page.GotoAsync($"{_bp.BaseUrl}/random", new() { WaitUntil = WaitUntilState.DOMContentLoaded });
+
+            // Wait for Blazor root element to render
+            await _bp.Page.WaitForSelectorAsync("div#app", new PageWaitForSelectorOptions { Timeout = 60000 });
 
             var fetchBtn = _bp.Page.GetByTestId("fetch-random-btn");
-            await fetchBtn.WaitForAsync(new() { State = WaitForSelectorState.Visible });
+            await fetchBtn.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 60000 });
             await fetchBtn.ClickAsync();
 
-
-            // Wait for joke text to appear and have content
             var jokeText = _bp.Page.GetByTestId("random-joke-text");
-            await jokeText.WaitForAsync(new() { State = WaitForSelectorState.Visible });
+            await jokeText.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 60000 });
 
-            // Assert it's not empty and looks like a sentence
             var text = await jokeText.InnerTextAsync();
             Assert.False(string.IsNullOrWhiteSpace(text));
             Assert.True(text.Length > 10);
+
+            // Debug dump
+            var content = await _bp.Page.ContentAsync();
+            Console.WriteLine("Page content:\n" + content);
         }
     }
 }
