@@ -2,16 +2,15 @@ name: Build, Test, and Deploy Blazor WASM
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches:
+      - main   # adjust if your default branch is different
 
 jobs:
   build-test-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout code
+      # Checkout source
       - name: Checkout
         uses: actions/checkout@v3
 
@@ -21,39 +20,32 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      # Restore projects
+      # Restore app
       - name: Restore App
         run: dotnet restore BlazorProj-CA3/BlazorProj-CA3.csproj
 
-      - name: Restore Tests
-        run: dotnet restore BlazorProj-CA3-Tests/BlazorProj-CA3-Tests.csproj
-
-      # Build projects
+      # Build app
       - name: Build App
         run: dotnet build BlazorProj-CA3/BlazorProj-CA3.csproj -c Release --no-restore
 
+      # Restore tests
+      - name: Restore Tests
+        run: dotnet restore BlazorProj-CA3-Tests/BlazorProj-CA3-Tests.csproj
+
+      # Build tests
       - name: Build Tests
         run: dotnet build BlazorProj-CA3-Tests/BlazorProj-CA3-Tests.csproj -c Release --no-restore
 
-      # Start the app in background for Playwright
-      - name: Start Blazor app
-        run: |
-          dotnet run --project BlazorProj-CA3/BlazorProj-CA3.csproj --urls "http://localhost:5252" &
-          echo "E2E_BASE_URL=http://localhost:5252" >> $GITHUB_ENV
-          for i in {1..60}; do
-            if curl -s http://localhost:5252 > /dev/null; then
-              echo "App is up!"
-              break
-            fi
-            sleep 2
-          done
-
       # Install Playwright browsers
-      - name: Install Playwright browsers
+      - name: Install Playwright Browsers
         run: pwsh ./BlazorProj-CA3-Tests/bin/Release/net9.0/playwright.ps1 install --with-deps
 
+      # Start Blazor app in background
+      - name: Start Blazor App
+        run: dotnet run --project BlazorProj-CA3/BlazorProj-CA3.csproj --urls "http://localhost:5252" &
+      
       # Run Playwright tests
-      - name: Run tests
+      - name: Run Tests
         run: dotnet test BlazorProj-CA3-Tests/BlazorProj-CA3-Tests.csproj -c Release --logger "console;verbosity=detailed"
 
       # Publish Blazor WASM
