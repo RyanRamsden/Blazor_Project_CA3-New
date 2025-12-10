@@ -13,7 +13,7 @@ namespace BlazorProj_CA3_Tests
         public IBrowser Browser { get; private set; } = default!;
         public IBrowserContext Context { get; private set; } = default!;
         public IPage Page { get; private set; } = default!;
-        public string BaseUrl { get; private set; } = Environment.GetEnvironmentVariable("E2E_BASE_URL") ?? "https://localhost:7004";
+        public string BaseUrl { get; private set; } = Environment.GetEnvironmentVariable("E2E_BASE_URL") ?? "https://localhost:5252";
         private Process? _appProcess;
 
         public async Task InitializeAsync()
@@ -27,6 +27,8 @@ namespace BlazorProj_CA3_Tests
             Browser = await Playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions {Headless = true});
             Context = await Browser.NewContextAsync(new BrowserNewContextOptions {IgnoreHTTPSErrors = true});
             Page = await Context.NewPageAsync();
+
+            Page.SetDefaultTimeout(60000);
         }
 
         public async Task DisposeAsync()

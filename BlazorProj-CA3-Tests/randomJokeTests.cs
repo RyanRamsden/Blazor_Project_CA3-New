@@ -18,6 +18,7 @@ namespace BlazorProj_CA3_Tests
         public async Task RandomJoke_Displays_Text_After_Fetch()
         {
             await _bp.Page.GotoAsync($"{_bp.BaseUrl}/random", new() { WaitUntil = Microsoft.Playwright.WaitUntilState.NetworkIdle });
+            await _bp.Page.WaitForSelectorAsync("body");
 
             var fetchBtn = _bp.Page.GetByTestId("fetch-random-btn");
             await fetchBtn.WaitForAsync(new() { State = WaitForSelectorState.Visible });

@@ -18,6 +18,8 @@ namespace BlazorProj_CA3_Tests
         public async Task Search_Shows_Results_For_Common_Query()
         {
             await _bp.Page.GotoAsync($"{_bp.BaseUrl}/search", new() { WaitUntil = WaitUntilState.NetworkIdle });
+            await _bp.Page.WaitForSelectorAsync("body");
+
 
             var input = _bp.Page.GetByTestId("keyword-search");
             await input.WaitForAsync(new() { State = WaitForSelectorState.Visible });
