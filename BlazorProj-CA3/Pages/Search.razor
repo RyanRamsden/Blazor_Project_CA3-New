@@ -1,0 +1,140 @@
+﻿@using BlazorProj_CA3.Models
+@using BlazorProj_CA3.Services
+@using System.ComponentModel.DataAnnotations
+@page "/search"
+@inject IJokeService JokeService
+
+<h3>Search Dad Jokes</h3>
+
+<EditForm Model="searchModel" OnValidSubmit="OnSearch">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="mb-3">
+        <InputText data-testid="keyword-search" @bind-Value="searchModel.Term" class="form-control" placeholder="Enter a keyword (min 2 chars)" />
+        <ValidationMessage For="@(() => searchModel.Term)" />
+    </div>
+    <div class="mb-3">
+        <label>Results per page</label>
+        <InputNumber @bind-Value="searchModel.Limit" class="form-control" />
+    </div>
+    <button data-testid="search-btn" type="submit" class="btn btn-primary" disabled="@isLoading">Search</button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(error))
+{
+    <div class="alert alert-danger mt-3">@error</div>
+}
+
+@if (results is not null)
+{
+    <div class="mt-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+                Found @results.Total_Jokes jokes — page @results.Current_Page of @results.Total_Pages
+            </div>
+            <div>
+                <select @onchange="OnSortChanged" class="form-select form-select-sm">
+                    <option value="none">Sort: none</option>
+                    <option value="lengthAsc">Length: short → long</option>
+                    <option value="lengthDesc">Length: long → short</option>
+                    <option value="alpha">Alphabetical</option>
+                </select>
+            </div>
+        </div>
+
+        <ul class="list-group" data-testid="results-list">
+            @foreach (var item in displayed)
+            {
+                <li class="list-group-item" data-testid="results-item">@item.Joke</li>
+            }
+        </ul>
+
+        <div class="d-flex justify-content-between mt-3">
+            <button class="btn btn-outline-secondary" @onclick="PrevPage" disabled="@(!CanPrev)">Previous</button>
+            <button class="btn btn-outline-secondary" @onclick="NextPage" disabled="@(!CanNext)">Next</button>
+        </div>
+    </div>
+}
+
+@code {
+    class SearchModel
+    {
+        [Required(ErrorMessage = "Enter a search term")]
+        [MinLength(2, ErrorMessage = "At least 2 characters")]
+        public string Term { get; set; } = "";
+        public int Limit { get; set; } = 10;
+    }
+
+    private readonly SearchModel searchModel = new();
+    SearchResult? results;
+    List<SearchJokeItem> displayed = new();
+    bool isLoading = false;
+    string? error;
+    int currentPage = 1;
+
+    bool CanPrev => results is not null && results.Current_Page > 1;
+    bool CanNext => results is not null && results.Current_Page < results.Total_Pages;
+
+    private async Task OnSearch()
+    {
+        currentPage = 1;
+        await Fetch();
+    }
+
+    private async Task Fetch()
+    {
+        isLoading = true;
+        error = null;
+        try
+        {
+            results = await JokeService.SearchJokesAsync(searchModel.Term, currentPage, searchModel.Limit);
+            displayed = results.Results;
+        }
+        catch (Exception ex)
+        {
+            results = null;
+            displayed = new();
+            error = $"Search failed: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task PrevPage()
+    {
+        if (results is null) return;
+        currentPage = Math.Max(1, results.Current_Page - 1);
+        await Fetch();
+    }
+
+    private async Task NextPage()
+    {
+        if (results is null) return;
+        currentPage = Math.Min(results.Total_Pages, results.Current_Page + 1);
+        await Fetch();
+    }
+
+    private void OnSortChanged(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+        if (results is null) return;
+        displayed = results.Results.ToList();
+        switch (val)
+        {
+            case "lengthAsc":
+                displayed = displayed.OrderBy(j => j.Joke.Length).ToList();
+                break;
+            case "lengthDesc":
+                displayed = displayed.OrderByDescending(j => j.Joke.Length).ToList();
+                break;
+            case "alpha":
+                displayed = displayed.OrderBy(j => j.Joke).ToList();
+                break;
+            default:
+                break;
+        }
+    }
+}

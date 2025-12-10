@@ -1,0 +1,7 @@
+.vs/
+wwwroot/**/*.map
+*.user
+*.suo
+bin/
+obj/
+.playwright/
