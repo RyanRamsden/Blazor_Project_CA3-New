@@ -26,7 +26,7 @@ jobs:
         run: dotnet restore BlazorProj-CA3/BlazorProj-CA3.sln
 
       - name: Build
-        run: dotnet build BlazorProj-CA3.sln --configuration Release --no-restore
+      - run: dotnet build BlazorProj-CA3/BlazorProj-CA3.sln -c Release --no-restore
 
       # Run Playwright tests
       - name: Install Playwright browsers
